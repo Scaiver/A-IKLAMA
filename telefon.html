@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahte Telefon Arayüzü</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(to right, #74ebd5, #9face6); /* Gradyan arka plan */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+        }
+        .phones-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 900px;
+        }
+        .phone {
+            width: 340px;
+            height: 600px;
+            background-color: #000;
+            border-radius: 40px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .screen {
+            width: 300px;
+            height: 480px;
+            background-color: #fff;
+            border-radius: 30px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .screen h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .screen p {
+            color: #666;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .home-button {
+            width: 60px;
+            height: 60px;
+            background-color: #666;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 20px;
+        }
+        input[type="text"], select {
+            width: 90%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+        input[type="text"]:focus, select:focus {
+            border: 2px solid #007aff;
+            outline: none;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .incoming-call {
+            display: none;
+        }
+        .fingerprint {
+            width: 30px;
+            height: 5px;
+            background-color: #666;
+            border-radius: 5px;
+            margin-top: 10px;
+            position: absolute;
+            bottom: 80px;
+        }
+        .notification {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ffcc00;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        .ios-status-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+        .ios-status-bar div {
+            color: #333;
+            font-size: 14px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .button-container button {
+            flex: 1;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phones-container">
+    <div class="phone" id="callerPhone">
+        <div class="notification" id="callerNotification">Arama Başlatıldı!</div>
+        <div class="ios-status-bar">
+            <div>🔋 85%</div>
+            <div>📶 4G</div>
+        </div>
+        <div class="screen" id="callerScreen">
+            <h2>Arayan</h2>
+            <select id="contactList" onchange="updateCallerName()">
+                <option value="">Kimi aramak istersiniz?</option>
+                <option value="Ahmet">Ahmet</option>
+                <option value="Mehmet">Mehmet</option>
+                <option value="Ayşe">Ayşe</option>
+                <option value="Fatma">Fatma</option>
+                <option value="Ali">Ali</option>
+            </select>
+            <input type="text" id="callReason" placeholder="Arama sebebi girin..." required>
+            <button onclick="aramaBaslat()">Aramayı Başlat</button>
+            <p id="callStatus">Arama bekleniyor...</p>
+        </div>
+        <div class="home-button"></div>
+        <div class="fingerprint"></div>
+    </div>
+
+    <div class="phone" id="receiverPhone">
+        <div class="ios-status-bar">
+            <div>🔋 90%</div>
+            <div>📶 4G</div>
+        </div>
+        <div class="screen incoming-call" id="receiverScreen" style="display:none;">
+            <h2>Arama Geliyor</h2>
+            <p id="incomingCallFrom">Arayan: <strong id="callerName">John Doe</strong></p>
+            <p id="incomingCallReason">Sebep: <span id="reasonText"></span></p>
+            <div class="button-container">
+                <button onclick="aramaKabulEt()">Kabul Et</button>
+                <button onclick="aramaReddet()">Reddet</button>
+            </div>
+        </div>
+        <div class="home-button"></div>
+        <div class="fingerprint"></div>
+    </div>
+</div>
+
+<script>
+    function aramaBaslat() {
+        var callerName = document.getElementById('contactList').value;
+        var sebep = document.getElementById('callReason').value;
+        var callStatus = document.getElementById('callStatus');
+        var receiverScreen = document.getElementById('receiverScreen');
+        var reasonText = document.getElementById('reasonText');
+        var incomingCallFrom = document.getElementById('incomingCallFrom');
+        var notification = document.getElementById('callerNotification');
+
+        if (callerName && sebep) {
+            callStatus.innerHTML = "Aranıyor...";
+            notification.style.display = "block";
+            setTimeout(function() {
+                notification.style.display = "none";
+            }, 2000); // 2 saniye sonra bildirim gizlenecek
+
+            // Gelen arama ekranına bilgileri aktar
+            incomingCallFrom.innerHTML = "Arayan: <strong>" + callerName + "</strong>";
+            reasonText.innerHTML = sebep;
+
+            setTimeout(function() {
+                receiverScreen.style.display = "block";
+                callStatus.innerHTML = "Arama Bekleniyor...";
+            }, 1000); // 1 saniye sonra arama ekranını göster
+        } else {
+            callStatus.innerHTML = "Lütfen bir arayan adı ve arama sebebi girin.";
+        }
+    }
+
+    function updateCallerName() {
+        var callerName = document.getElementById('contactList').value;
+        document.getElementById('callerName').innerText = callerName ? callerName : "John Doe";
+    }
+
+    function aramaKabulEt() {
+        var callStatus = document.getElementById('callStatus');
+        callStatus.innerHTML = "Arama kabul edildi.";
+        document.getElementById('receiverScreen').style.display = "none"; // Gelen arama ekranını gizle
+    }
+
+    function aramaReddet() {
+        var callStatus = document.getElementById('callStatus');
+        callStatus.innerHTML = "Arama reddedildi.";
+        document.getElementById('receiverScreen').style.display = "none"; // Gelen arama ekranını gizle
+    }
+</script>
+
+</body>
+</html>
